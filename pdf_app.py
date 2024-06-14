@@ -4,8 +4,8 @@ import streamlit as st
 from PIL import Image
 from PyPDF2 import PdfReader
 
-from langchain.embeddings import OpenAIEmbeddings, SentenceTransformerEmbeddings
-from langchain.chat_models import ChatOpenAI
+from langchain.embeddings import AzureOpenAIEmbeddings, SentenceTransformerEmbeddings
+from langchain.chat_models import AzureChatOpenAI
 from langchain.chains import ConversationalRetrievalChain, RetrievalQA
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.vectorstores import FAISS
@@ -16,7 +16,7 @@ home_privacy = "We value and respect your privacy. To safeguard your personal de
 
 # Page configuration for Simple PDF App
 st.set_page_config(
-    page_title="Document Q&A with AI",
+    page_title="HR Q&A with AI",
     page_icon="🧊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -24,52 +24,49 @@ st.set_page_config(
 
 # OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 st.sidebar.subheader("Setup")
-OPENAI_API_KEY = st.sidebar.text_input("Enter Your OpenAI API Key:", type="password")
-st.sidebar.markdown("Get your OpenAI API key [here](https://platform.openai.com/account/api-keys)")
-st.sidebar.divider()
-st.sidebar.subheader("Model Selection")
-llm_model_options = ['gpt-3.5-turbo', 'gpt-3.5-turbo-16k','gpt-4']  # Add more models if available
-model_select = st.sidebar.selectbox('Select LLM Model:', llm_model_options, index=0)
-st.sidebar.markdown("""\n""")
-temperature_input = st.sidebar.slider('Set AI Randomness / Determinism:', min_value=0.0, max_value=1.0, value=0.5)
-st.sidebar.markdown("""\n""")
+# OPENAI_API_KEY = st.sidebar.text_input("Enter Your OpenAI API Key:", type="password")
+# st.sidebar.markdown("Get your OpenAI API key [here](https://platform.openai.com/account/api-keys)")
+# st.sidebar.divider()
+# st.sidebar.subheader("Model Selection")
+# llm_model_options = ['gpt-3.5-turbo', 'gpt-3.5-turbo-16k','gpt-4']  # Add more models if available
+# model_select = st.sidebar.selectbox('Select LLM Model:', llm_model_options, index=0)
+# st.sidebar.markdown("""\n""")
+# temperature_input = st.sidebar.slider('Set AI Randomness / Determinism:', min_value=0.0, max_value=1.0, value=0.5)
+# st.sidebar.markdown("""\n""")
 clear_history = st.sidebar.button("Clear conversation history")
 
 
+# with st.sidebar:
+#     st.divider()
+#     st.subheader("Considerations:", anchor=False)
+#     st.info(
+#         """
+#         - Currently only supports PDFs. Include support for .doc, .docx, .csv & .xls files
+#
+#         """)
+#
+#     st.subheader("Updates Required:", anchor=False)
+#     st.warning("""
+#         1. Support for multiple PDFs.
+#
+#         2. Use Langchain PDF loader and higher quality vector store for document parsing + reduce inefficient handling.
+#
+#         3. Improve contextual question-answering by developing Prompt Templates - Tendency to hallucinate.
+#
+#         """
+#         )
+#
+#     st.divider()
+
 with st.sidebar:
-    st.divider()
-    st.subheader("Considerations:", anchor=False)
-    st.info(
-        """
-        - Currently only supports PDFs. Include support for .doc, .docx, .csv & .xls files 
-
-        """)
-
-    st.subheader("Updates Required:", anchor=False)
-    st.warning("""
-        1. Support for multiple PDFs.
-        
-        2. Use Langchain PDF loader and higher quality vector store for document parsing + reduce inefficient handling.
-        
-        3. Improve contextual question-answering by developing Prompt Templates - Tendency to hallucinate.
-    
-        """
-        )
-
-    st.divider()
-
-with st.sidebar:
-    st.subheader("👨‍💻 Author: **Yaksh Birla**", anchor=False)
-    
-    st.subheader("🔗 Contact / Connect:", anchor=False)
-    st.markdown(
-        """
-        - [Email](mailto:yb.codes@gmail.com)
-        - [LinkedIn](https://www.linkedin.com/in/yakshb/)
-        - [Github Profile](https://github.com/yakshb)
-        - [Medium](https://medium.com/@yakshb)
-        """
-    )
+    st.subheader("👨‍Developed by: Crystal Corporate ISD", anchor=False)
+    st.subheader("💻 Powered by ChatGPT-4o", anchor=False)
+    st.subheader("🔗 Contact / Connect: Corporate ISD", anchor=False)
+    # st.markdown(
+    #     """
+    #     - [Email](mailto: )
+    #     """
+    # )
 
     st.divider()
     st.write("Made with 🦜️🔗 Langchain and OpenAI LLMs")
@@ -80,32 +77,32 @@ if "conversation" not in st.session_state:
 st.markdown(f"""## AI-Assisted Document Analysis 📑 <span style=color:#2E9BF5><font size=5>Beta</font></span>""",unsafe_allow_html=True)
 st.write("_A tool built for AI-Powered Research Assistance or Querying Documents for Quick Information Retrieval_")
 
-with st.expander("❔How does the report analysis work?"):
-    st.info("""
-    These processes are powered by robust and sophisticated technologies like OpenAI’s Large Language Models, Sentence Transformer, FAISS, and Streamlit, ensuring a reliable and user-friendly experience for users to gain quick insights from their documents.
+# with st.expander("❔How does the report analysis work?"):
+#     st.info("""
+#     These processes are powered by robust and sophisticated technologies like OpenAI’s Large Language Models, Sentence Transformer, FAISS, and Streamlit, ensuring a reliable and user-friendly experience for users to gain quick insights from their documents.
+#
+#     1. **Document Upload and Processing**: The tool reads and extracts text from these documents, creating a foundational base of information. During this phase, the documents are also processed into manageable pieces to prepare them for subsequent analysis and querying.
+#
+#     2. **Data Transformation and Indexing**: HuggingFace Sentence Transformers convert textual data into numerical vectors. Post-transformation, the data is organized and indexed in a vector database using Meta's FAISS, which is renowned for its efficient search capabilities.
+#
+#     3. **Conversational AI**: Using OpenAI's ChatOpenAI model to generate responses, the system retrieves answers based on the information extracted from the uploaded documents while maintaining contextual accuracy.
+#
+#     4. **Query Handling and Response Generation**: Each user query is meticulously managed and processed within the tool. The tool ensures a smooth interaction and generates accurate responses based on the ongoing conversation and the available data.
+#
+#     The overarching objective is to enable users to query lengthy documents or reports to expedite comprehensive research.
+#
+#     """, icon="ℹ️")
 
-    1. **Document Upload and Processing**: The tool reads and extracts text from these documents, creating a foundational base of information. During this phase, the documents are also processed into manageable pieces to prepare them for subsequent analysis and querying.
-    
-    2. **Data Transformation and Indexing**: HuggingFace Sentence Transformers convert textual data into numerical vectors. Post-transformation, the data is organized and indexed in a vector database using Meta's FAISS, which is renowned for its efficient search capabilities.
-    
-    3. **Conversational AI**: Using OpenAI's ChatOpenAI model to generate responses, the system retrieves answers based on the information extracted from the uploaded documents while maintaining contextual accuracy.
-    
-    4. **Query Handling and Response Generation**: Each user query is meticulously managed and processed within the tool. The tool ensures a smooth interaction and generates accurate responses based on the ongoing conversation and the available data.
-    
-    The overarching objective is to enable users to query lengthy documents or reports to expedite comprehensive research.
-
-    """, icon="ℹ️")
-
-with st.expander("⚠️ Privacy and Terms of Use"):
-    st.info("""
-        **Privacy**: We value and respect your privacy. To safeguard your personal details, we utilize the hashed value of your OpenAI API Key, ensuring utmost confidentiality and anonymity. Your API key facilitates AI-driven features during your session and is never retained post-visit. You can confidently fine-tune your research, assured that your information remains protected and private.
-
-        **Terms of Use**: By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. 
-        It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. 
-        The service may collect user dialogue data for future research. For an optimal experience, please use desktop computers for this demo, as mobile devices may compromise its quality.
-
-        **License**: The service is a research preview intended for non-commercial use only, subject to the model [License](https://huggingface.co/docs/hub/sentence-transformers) HuggingFace embedding models, [Terms of Use](https://openai.com/policies/terms-of-use) of the data generated by OpenAI and Privacy Practices of Langchain. Please contact us if you find any violations.
-        """, icon="ℹ️")
+# with st.expander("⚠️ Privacy and Terms of Use"):
+#     st.info("""
+#         **Privacy**: We value and respect your privacy. To safeguard your personal details, we utilize the hashed value of your OpenAI API Key, ensuring utmost confidentiality and anonymity. Your API key facilitates AI-driven features during your session and is never retained post-visit. You can confidently fine-tune your research, assured that your information remains protected and private.
+#
+#         **Terms of Use**: By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only.
+#         It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes.
+#         The service may collect user dialogue data for future research. For an optimal experience, please use desktop computers for this demo, as mobile devices may compromise its quality.
+#
+#         **License**: The service is a research preview intended for non-commercial use only, subject to the model [License](https://huggingface.co/docs/hub/sentence-transformers) HuggingFace embedding models, [Terms of Use](https://openai.com/policies/terms-of-use) of the data generated by OpenAI and Privacy Practices of Langchain. Please contact us if you find any violations.
+#         """, icon="ℹ️")
 
 # Extracts and concatenates text from a list of PDF documents
 def get_pdf_text(pdf_docs):
@@ -113,7 +110,7 @@ def get_pdf_text(pdf_docs):
     for pdf in pdf_docs:
         try:
             pdf_reader = PdfReader(pdf)
-        except (PdfReader.PdfReadError, PyPDF2.utils.PdfReadError) as e:
+        except Exception as e:
             print(f"Failed to read {pdf}: {e}")
             continue  # skip to next pdf document in case of read error
 
@@ -140,8 +137,10 @@ def get_text_chunks(text):
 
 # Generates embeddings for given text chunks and creates a vector store using FAISS
 def get_vectorstore(text_chunks):
-    # embeddings = OpenAIEmbeddings()
-    embeddings = SentenceTransformerEmbeddings(model_name='all-MiniLM-L6-v2')
+    embeddings = AzureOpenAIEmbeddings(api_key='09329361a10f430fa7e44af7da606b7d',
+                                       deployment='text-embedding-ada-002',
+                                       azure_endpoint='https://hehebrew.openai.azure.com/')
+    # embeddings = SentenceTransformerEmbeddings(model_name='all-MiniLM-L6-v2')
     vectorstore = FAISS.from_texts(texts=text_chunks, embedding=embeddings)
     return vectorstore
 
@@ -149,7 +148,9 @@ def get_vectorstore(text_chunks):
 def get_conversation_chain(vectorstore):
     memory = ConversationBufferWindowMemory(memory_key='chat_history', return_message=True)
     conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=ChatOpenAI(temperature=temperature_input, model_name=model_select),
+        llm=AzureChatOpenAI(temperature=0.0, model_name='gpt-4o', openai_api_version="2024-02-01",
+                            api_key='09329361a10f430fa7e44af7da606b7d',
+                            azure_endpoint='https://hehebrew.openai.azure.com/'),
         retriever=vectorstore.as_retriever(),
         get_chat_history=lambda h : h,
         memory=memory
@@ -183,6 +184,9 @@ if 'doc_messages' not in st.session_state or clear_history:
     # Start with first message from assistant
     st.session_state['doc_messages'] = [{"role": "assistant", "content": "Query your documents"}]
     st.session_state['chat_history'] = []  # Initialize chat_history as an empty list
+    if st.session_state.conversation is not None:
+        st.session_state.conversation.memory.clear()
+
 
 # Display previous chat messages
 for message in st.session_state['doc_messages']:
@@ -191,9 +195,9 @@ for message in st.session_state['doc_messages']:
 
 # If user provides input, process it
 if user_query := st.chat_input("Enter your query here"):
-    if not OPENAI_API_KEY:
-        st.info("Please add your OpenAI API key to continue.")
-        st.stop()
+    # if not OPENAI_API_KEY:
+    #     st.info("Please add your OpenAI API key to continue.")
+    #     st.stop()
     # Add user's message to chat history
     st.session_state['doc_messages'].append({"role": "user", "content": user_query})
     with st.chat_message("user"):
